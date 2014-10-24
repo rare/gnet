@@ -13,6 +13,7 @@ type Client struct {
 	conn		*net.TCPConn
 	server		*Server
 	hbtime		time.Time
+	outchan		chan *Response
 }
 
 func (this *Client) readFull(buf []byte) int {
@@ -86,10 +87,17 @@ func (this *Client) handleInput() {
 func (this *Client) handleOutput() {
 	for {
 		select {
-			/*
-			case pack := <-client.outMsgs:
+			case resp, ok := <-this.outchan:
+				if !ok {
+					//TODO
+					return
+				}
+
+				resp.Flush()
+
+				//TODO
 				time.Sleep(1 * time.Second)
-			*/
+
 			case <-this.exit:
 				return
 		}
@@ -100,7 +108,7 @@ func NewClient() *Client {
 	return &Client{
 		exit:		make(chan bool),
 		conn:		nil,
-		server:	nil,
+		server:		nil,
 		hbtime:		time.Now(),
 	}
 }

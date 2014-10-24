@@ -4,7 +4,7 @@ type EventType int
 
 const (
 	EVT_CONN_ACCEPTED	EventType = iota
-	EVT_CONN_CLOSSING
+	EVT_CONN_CLOSING
 
 	EVT_REQ_BEFORE
 	EVT_REQ_AFTER
@@ -19,5 +19,6 @@ const (
 )
 
 type Filter interface {
-	Filter(evt EventType, obj interface{}) FilterResult
+	CareEvent(evt EventType) bool
+	DoFilter(evt EventType, obj interface{}) FilterResult
 }

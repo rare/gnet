@@ -9,41 +9,54 @@ import (
 	"github.com/rare/gnet/gnfilter"
 )
 
+type HandlerFuncType func(req *Request, resp *Response) error
+
 type Server struct {
 	exit		chan bool
 	ln			*net.TCPListener
-	cn			uint32							//number of connected clients
 	hm			map[uint16]HandlerFuncType		//request handler map
-	filters		*List							//filters 
+	filters		*list.List							//filters 
+}
+
+func (this *Server) addSysFilters() {
+	filter := gnfilter.NewMaxConnFilter(Conf.MaxClients)
+	this.FilterFunc(*filter)
+	//TODO
+	//More sys filters
+}
+
+func (this *Server) doFilters(evt gnfilter.EventType, obj interface{}) gnfilter.FilterResult {
+	for f := this.filters.Front(); f != nil; f = f.Next() {
+		filter, _ := f.Value.(gnfilter.Filter)
+
+		if filter.CareEvent(evt) {
+			fr := filter.DoFilter(gnfilter.EVT_CONN_ACCEPTED, obj)
+
+			if fr == gnfilter.FR_ABORT {
+				return gnfilter.FR_ABORT
+			}
+
+			if fr == gnfilter.FR_END {
+				break
+			}
+		}
+	}
+
+	return gnfilter.FR_OK
 }
 
 func (this *Server) handleConnection(conn *net.TCPConn) {
 	//logger.Printf("accept connection from (%s) (%p)", conn.RemoteAddr(), conn)
 
-	for f := this.filters.Front(); f != nil; f = f.Next() {
-		fr := f.Filter(gnfilter.EVT_CONN_ACCEPTED, conn)
-
-		if fr == gnfilter.FR_ABORT {
-			conn.Close()
-			return
-		}
-
-		if fr == gnfilter.FR_END {
-			break
-		}
-	}
-
-	if this.cn >= Conf.MaxClients {
-		//logger.Printf("too many clients")
-		//TODO
+	fr := this.doFilters(gnfilter.EVT_CONN_ACCEPTED, conn)
+	if fr != gnfilter.FR_OK {
 		conn.Close()
 		return
 	}
 
-	this.cn++
 	defer func(){
+		this.doFilters(gnfilter.EVT_CONN_CLOSING, conn)
 		conn.Close()
-		this.cn--
 	}()
 
 	cli := NewClient()
@@ -61,7 +74,6 @@ func NewServer() *Server {
 	return &Server{
 		exit:		make(chan bool),
 		ln:			nil,
-		cn:			0,
 		hm:			make(map[uint16]HandlerFuncType),
 		filters:	list.New(),
 	}
@@ -83,10 +95,12 @@ func (this *Server) Init(conf *Config) error {
 	}
 	this.ln = ln
 
+	this.addSysFilters()
+
 	return nil
 }
 
-func (this *Server) FilterFunc(filter *Filter) {
+func (this *Server) FilterFunc(filter gnfilter.Filter) {
 	this.filters.PushBack(filter)
 }
 
@@ -110,7 +124,6 @@ func (this *Server) Run() {
 	defer func() {
 		this.ln.Close()
 		this.ln = nil
-		this.cn = 0
 	}()
 
 	for {
