@@ -113,9 +113,9 @@ func (this *Server) HandleFunc(cmd uint16, handler HandlerFuncType) error {
 	return nil
 }
 
-func (this *Server) Dispatch(client *Client, header *gnproto.Header, body []byte) error {
-	if handler, ok := this.hm[header.Cmd]; ok {
-		return handler(client, header, body)
+func (this *Server) Dispatch(req *Request, resp *Response) error {
+	if handler, ok := this.hm[req.Cmd()]; ok {
+		return handler(req, resp)
 	}
 	return errors.New("command handler not found")
 }

@@ -2,10 +2,10 @@ package gnet
 
 import (
 	"errors"
-	"io"
 	"net"
 	"time"
 	"github.com/rare/gnet/gnproto"
+	"github.com/rare/gnet/gnutil"
 )
 
 type Client struct {
@@ -16,23 +16,11 @@ type Client struct {
 	outchan		chan *Response
 }
 
-func (this *Client) readFull(buf []byte) int {
-	n, err := io.ReadFull(this.conn, buf)
-	if err != nil {
-		if e, ok := err.(*net.OpError); ok && e.Timeout() {
-			return n
-		}
-		return -1
-	}
-	return n
-}
-
 func (this *Client) handleInput() {
 	for {
 		var (
 			now = time.Now()
 			headbuf = make([]byte, gnproto.HEADER_SIZE)
-			bodybuf		[]byte
 			header		gnproto.Header
 		)
 
@@ -43,7 +31,7 @@ func (this *Client) handleInput() {
 		}
 
 		this.conn.SetReadDeadline(now.Add(time.Duration(Conf.ReadTimeout) * time.Second))
-		if len(headbuf) != this.readFull(headbuf) {
+		if len(headbuf) != gnutil.ReadFull(this.conn, headbuf) {
 			//logger.Printf("%p: read header timeout", this.conn)
 			//TODO
 			break
@@ -61,23 +49,17 @@ func (this *Client) handleInput() {
 			break
 		}
 
-		if header.Len > 0 {
-			bodybuf = make([]byte, header.Len)
-			if len(bodybuf) != this.readFull(bodybuf) {
-				//logger.Printf("%p: read body timeout", this.conn)
-				//TODO
-				break
-			}
-		}
-
 		if header.Cmd == gnproto.CMD_HEART_BEAT {
 			this.hbtime = time.Now()
 		} else {
-			if err := this.server.Dispatch(this, &header, bodybuf); err != nil {
+			req := NewRequest(this, &header)
+			resp := NewResponse(this, &header)
+			if err := this.server.Dispatch(req, resp); err != nil {
 				//logger.Printf("%p: dispatch command error", this.conn)
 				//TODO
 				break
 			}
+			this.outchan <- resp
 		}
 	}
 
@@ -92,7 +74,6 @@ func (this *Client) handleOutput() {
 					//TODO
 					return
 				}
-
 				resp.Flush()
 
 				//TODO
@@ -110,6 +91,7 @@ func NewClient() *Client {
 		conn:		nil,
 		server:		nil,
 		hbtime:		time.Now(),
+		outchan:	make(chan *Response, Conf.OutChanBufSize),
 	}
 }
 
