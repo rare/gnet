@@ -4,7 +4,7 @@ import (
 	"errors"
 	"net"
 	"time"
-	gnproto "./gnproto"
+	"gnproto"
 )
 
 type Server struct {
