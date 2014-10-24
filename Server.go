@@ -1,22 +1,38 @@
 package gnet
 
 import (
+	"container/list"
 	"errors"
 	"net"
 	"time"
 	"github.com/rare/gnet/gnproto"
+	"github.com/rare/gnet/gnfilter"
 )
 
 type Server struct {
-	exit		chan bool				
-	ln			*net.TCPListener		
+	exit		chan bool
+	ln			*net.TCPListener
 	cn			uint32							//number of connected clients
 	hm			map[uint16]HandlerFuncType		//request handler map
+	filters		*List							//filters 
 }
 
 func (this *Server) handleConnection(conn *net.TCPConn) {
 	//logger.Printf("accept connection from (%s) (%p)", conn.RemoteAddr(), conn)
-	
+
+	for f := this.filters.Front(); f != nil; f = f.Next() {
+		fr := f.Filter(gnfilter.EVT_CONN_ACCEPTED, conn)
+
+		if fr == gnfilter.FR_ABORT {
+			conn.Close()
+			return
+		}
+
+		if fr == gnfilter.FR_END {
+			break
+		}
+	}
+
 	if this.cn >= Conf.MaxClients {
 		//logger.Printf("too many clients")
 		//TODO
@@ -44,9 +60,10 @@ func (this *Server) handleConnection(conn *net.TCPConn) {
 func NewServer() *Server {
 	return &Server{
 		exit:		make(chan bool),
-		ln:			nil,	
+		ln:			nil,
 		cn:			0,
 		hm:			make(map[uint16]HandlerFuncType),
+		filters:	list.New(),
 	}
 }
 
@@ -67,6 +84,10 @@ func (this *Server) Init(conf *Config) error {
 	this.ln = ln
 
 	return nil
+}
+
+func (this *Server) FilterFunc(filter *Filter) {
+	this.filters.PushBack(filter)
 }
 
 func (this *Server) HandleFunc(cmd uint16, handler HandlerFuncType) error {
