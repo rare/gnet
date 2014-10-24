@@ -1,7 +1,7 @@
 package gnet
 
 import (
-	"gnproto"
+	"github.com/rare/gnet/gnproto"
 )
 
 type HandlerFuncType func(client *Client, header *gnproto.Header, body []byte) error

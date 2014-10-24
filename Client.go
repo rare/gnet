@@ -5,7 +5,7 @@ import (
 	"io"
 	"net"
 	"time"
-	"gnproto"
+	"github.com/rare/gnet/gnproto"
 )
 
 type Client struct {
