@@ -30,12 +30,14 @@ func (this *Request) Body() ([]byte, error) {
 	if this.header.Len > 0 {
 		bodybuf := make([]byte, this.header.Len)
 		if len(bodybuf) != gnutil.ReadFull(this.client.conn, bodybuf) {
-			//logger.Printf("%p: read body timeout", this.conn)
-			//TODO
 			return bodybuf, errors.New("read request body error")
 		}
 		return bodybuf, nil
 	}
 
 	return nil, nil
+}
+
+func (this *Request) BodyLen() uint32 {
+	return this.header.Len
 }
