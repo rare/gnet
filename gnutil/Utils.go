@@ -15,4 +15,3 @@ func ReadFull(conn *net.TCPConn, buf []byte) int {
 	}
 	return n
 }
-

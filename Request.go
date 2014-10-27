@@ -22,6 +22,10 @@ func (this *Request) Cmd() uint16 {
 	return this.header.Cmd
 }
 
+func (this *Request) Client() *Client {
+	return this.client
+}
+
 func (this *Request) Body() ([]byte, error) {
 	if this.header.Len > 0 {
 		bodybuf := make([]byte, this.header.Len)
