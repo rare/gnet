@@ -15,41 +15,7 @@ type Client struct {
 	server		*Server
 	hbtime		time.Time
 	outchan		chan *Response
-}
-
-func (this *Client) Write(buf []byte) int {
-	this.conn.SetWriteDeadline(time.Now().Add(time.Duration(Conf.WriteTimeout) + time.Second))
-	n, err := this.conn.Write(buf)
-	if n != len(buf) || err != nil {
-		//TODO
-	}
-	return n
-}
-
-func (this *Client) ReadFrom(rd io.Reader) int {
-	var nn = 0
-	buf := make([]byte, 32*1024)
-	for {
-		n, err:= rd.Read(buf)
-		if n > 0 {
-			this.conn.SetWriteDeadline(time.Now().Add(time.Duration(Conf.WriteTimeout) + time.Second))
-			n, err := this.conn.Write(buf)
-			if n != len(buf) || err !=nil {
-				//TODO
-				break
-			}
-			nn += n
-		}
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			//TODO
-			break
-		}
-	}
-
-	return nn
+	storage		*gnutil.Storage
 }
 
 func (this *Client) handleInput() {
@@ -128,6 +94,7 @@ func NewClient() *Client {
 		server:		nil,
 		hbtime:		time.Now(),
 		outchan:	make(chan *Response, Conf.OutChanBufSize),
+		storage:	gnutil.NewStorage(),
 	}
 }
 
@@ -146,3 +113,41 @@ func (this *Client) Process() {
 	this.handleInput()
 }
 
+func (this *Client) Write(buf []byte) int {
+	this.conn.SetWriteDeadline(time.Now().Add(time.Duration(Conf.WriteTimeout) + time.Second))
+	n, err := this.conn.Write(buf)
+	if n != len(buf) || err != nil {
+		//TODO
+	}
+	return n
+}
+
+func (this *Client) ReadFrom(rd io.Reader) int {
+	var nn = 0
+	buf := make([]byte, 32*1024)
+	for {
+		n, err:= rd.Read(buf)
+		if n > 0 {
+			this.conn.SetWriteDeadline(time.Now().Add(time.Duration(Conf.WriteTimeout) + time.Second))
+			n, err := this.conn.Write(buf)
+			if n != len(buf) || err !=nil {
+				//TODO
+				break
+			}
+			nn += n
+		}
+		if err == io.EOF {
+			break
+		}
+		if err != nil {
+			//TODO
+			break
+		}
+	}
+
+	return nn
+}
+
+func (this *Client) Storage() *gnutil.Storage {
+	return this.storage
+}

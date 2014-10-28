@@ -7,6 +7,7 @@ import (
 	"time"
 	"github.com/rare/gnet/gnproto"
 	"github.com/rare/gnet/gnfilter"
+	"github.com/rare/gnet/gnutil"
 )
 
 type HandlerFuncType func(req *Request, resp *Response) error
@@ -16,13 +17,22 @@ type Server struct {
 	ln			*net.TCPListener
 	hm			map[uint16]HandlerFuncType		//request handler map
 	filters		*list.List							//filters 
+	storage		*gnutil.Storage
 }
 
 func (this *Server) addSysFilters() {
-	filter := gnfilter.NewMaxConnFilter(Conf.MaxClients)
-	this.FilterFunc(*filter)
-	//TODO
+	max_conn_filter := gnfilter.NewMaxConnFilter(Conf.MaxClients)
+	this.FilterFunc(*max_conn_filter)
+	bwl_filter := gnfilter.NewBlackWhiteListFilter()
+	err := bwl_filter.Init(Conf.BlackListFile, Conf.WhiteListFile)
+	if err != nil {
+		//TODO
+		return
+	}
+	this.FilterFunc(*bwl_filter)
+
 	//More sys filters
+	//TODO
 }
 
 func (this *Server) doFilters(evt gnfilter.EventType, obj interface{}) gnfilter.FilterResult {
@@ -76,6 +86,7 @@ func NewServer() *Server {
 		ln:			nil,
 		hm:			make(map[uint16]HandlerFuncType),
 		filters:	list.New(),
+		storage:	gnutil.NewStorage(),
 	}
 }
 
@@ -152,4 +163,8 @@ func (this *Server) Run() {
 
 func (this *Server) Stop() {
 	close(this.exit)
+}
+
+func (this *Server) Storage() *gnutil.Storage {
+	return this.storage
 }

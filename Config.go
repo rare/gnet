@@ -8,6 +8,8 @@ type Config struct {
 	HBTimeout		uint32		`json:"heartbeat_timeout"`
 	ReadTimeout		uint32		`json:"read_timeout"`
 	WriteTimeout	uint32		`json:"write_timeout"`
+	BlackListFile	string		`json:"black_list_file"`
+	WhiteListFile	string		`json:"white_list_file"`
 }
 
 var (
