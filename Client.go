@@ -1,6 +1,8 @@
 package gnet
 
 import (
+	"fmt"		//debug
+
 	"errors"
 	"net"
 	"io"
@@ -27,37 +29,46 @@ func (this *Client) handleInput() {
 		)
 
 		if now.After(this.hbtime.Add(time.Duration(Conf.HBTimeout) * time.Second)) {
-			//logger.Printf("%p: heartbeat timeout", this.conn)
+			//debug
+			fmt.Println("conn heartbeat timeout")
 			//TODO
 			break
 		}
 
 		this.conn.SetReadDeadline(now.Add(time.Duration(Conf.ReadTimeout) * time.Second))
 		if len(headbuf) != gnutil.ReadFull(this.conn, headbuf) {
-			//logger.Printf("%p: read header timeout", this.conn)
+			//debug
+			fmt.Println("conn read head timeout")
 			//TODO
 			break
 		}
 
 		if err := header.Deserialize(headbuf); err != nil {
-			//logger.Printf("%p: deserialize header error", this.conn)
+			//debug
+			fmt.Println("conn parse head error")
 			//TODO
 			break
 		}
 
-		if header.Len > Conf.MaxBodyLen {
-			//logger.Printf("%p: header len too big", this.conn)
+		if Conf.MaxBodyLen != 0 && header.Len > Conf.MaxBodyLen {
+			//debug
+			fmt.Printf("head len: %d, max len: %d\n", header.Len, Conf.MaxBodyLen)
+			fmt.Println("conn body len too large")
 			//TODO
 			break
 		}
 
 		if header.Cmd == gnproto.CMD_HEART_BEAT {
+			//debug
+			fmt.Println("recv heart beat")
+
 			this.hbtime = time.Now()
 		} else {
 			req := NewRequest(this, &header)
 			resp := NewResponse(this, &header)
 			if err := this.server.Dispatch(req, resp); err != nil {
-				//logger.Printf("%p: dispatch command error", this.conn)
+				//debug
+				fmt.Println("dispatch error")
 				//TODO
 				break
 			}
@@ -77,9 +88,6 @@ func (this *Client) handleOutput() {
 					return
 				}
 				resp.Flush()
-
-				//TODO
-				time.Sleep(1 * time.Second)
 
 			case <-this.exit:
 				return

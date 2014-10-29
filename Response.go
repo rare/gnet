@@ -34,9 +34,11 @@ func (this *Response) SetBody(rd io.Reader) {
 }
 
 func (this *Response) Flush() {
-	b, _ := this.header.Serialize()
-	this.client.Write(b)
-	this.client.ReadFrom(this.body)
+	if this.body != nil {
+		b, _ := this.header.Serialize()
+		this.client.Write(b)
+		this.client.ReadFrom(this.body)
+	}
 
 	if this.closeflag {
 		this.client.Close()

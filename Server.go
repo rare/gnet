@@ -1,6 +1,8 @@
 package gnet
 
 import (
+	"fmt"		//debug
+
 	"container/list"
 	"errors"
 	"net"
@@ -56,7 +58,8 @@ func (this *Server) doFilters(evt gnfilter.EventType, obj interface{}) gnfilter.
 }
 
 func (this *Server) handleConnection(conn *net.TCPConn) {
-	//logger.Printf("accept connection from (%s) (%p)", conn.RemoteAddr(), conn)
+	//debug
+	fmt.Printf("accept connection from (%s) (%p)\n", conn.RemoteAddr(), conn)
 
 	fr := this.doFilters(gnfilter.EVT_CONN_ACCEPTED, conn)
 	if fr != gnfilter.FR_OK {
@@ -72,7 +75,6 @@ func (this *Server) handleConnection(conn *net.TCPConn) {
 	cli := NewClient()
 	err := cli.Init(conn, this)
 	if err != nil {
-		//logger.Printf("init client error")
 		//TODO
 		return
 	}
