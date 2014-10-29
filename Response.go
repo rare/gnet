@@ -25,6 +25,10 @@ func (this *Response) Client() *Client {
 	return this.client
 }
 
+func (this *Response) SetBodyLen(l uint32) {
+	this.header.Len = l
+}
+
 func (this *Response) SetBody(rd io.Reader) {
 	this.body = rd
 }
