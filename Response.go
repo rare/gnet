@@ -9,6 +9,7 @@ type Response struct {
 	client		*Client
 	header		*gnproto.Header
 	body		io.Reader
+	closeflag	bool
 }
 
 func NewResponse(client *Client, header *gnproto.Header) *Response {
@@ -16,6 +17,7 @@ func NewResponse(client *Client, header *gnproto.Header) *Response {
 		client: client,
 		header: header,
 		body: nil,
+		closeflag: false,
 	}
 }
 
@@ -31,4 +33,12 @@ func (this *Response) Flush() {
 	b, _ := this.header.Serialize()
 	this.client.Write(b)
 	this.client.ReadFrom(this.body)
+
+	if this.closeflag {
+		this.client.Close()
+	}
+}
+
+func (this *Response) SetCloseAfterSending() {
+	this.closeflag = true
 }

@@ -148,6 +148,10 @@ func (this *Client) ReadFrom(rd io.Reader) int {
 	return nn
 }
 
+func (this *Client) Close() {
+	this.conn.Close()
+}
+
 func (this *Client) Storage() *gnutil.Storage {
 	return this.storage
 }

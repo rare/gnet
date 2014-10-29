@@ -17,18 +17,12 @@ func ReadFull(conn *net.TCPConn, buf []byte) int {
 	return n
 }
 
-func DirExists(path string) (bool, error) {
+func DirExists(path string) bool {
 	fi, err := os.Stat(path)
-	if err == nil {
-		return fi.IsDir(), nil
-	}
-	return false, err
+	return err == nil && fi.IsDir()
 }
 
-func FileExists(path string) (bool, error) {
+func FileExists(path string) bool {
 	fi, err := os.Stat(path)
-	if err == nil {
-		return fi.Mode().IsRegular(), nil
-	}
-	return false, err
+	return err == nil &&  fi.Mode().IsRegular()
 }
