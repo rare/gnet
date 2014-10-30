@@ -154,7 +154,7 @@ func (this *Server) Run() {
 		conn, err := this.ln.AcceptTCP()
 		if err != nil {
 			if e, ok := err.(*net.OpError); ok && e.Timeout() {
-				log.Warnf("server(%v) accept timeout", this.ln.Addr())
+				log.Tracef("server(%v) accept timeout", this.ln.Addr())
 				continue
 			}
 			log.Warnf("server(%v) accept error: (%v)", this.ln.Addr(), err)
