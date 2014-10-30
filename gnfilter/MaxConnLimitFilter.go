@@ -23,6 +23,8 @@ func (this MaxConnFilter) CareEvent(evt EventType) bool {
 func (this MaxConnFilter) DoFilter(evt EventType, obj interface{}) FilterResult {
 	if evt == EVT_CONN_ACCEPTED {
 		if this.limit != 0 && this.cn >= this.limit  {
+			//TODO
+			//trace
 			return FR_ABORT
 		}
 		this.cn++

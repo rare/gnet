@@ -59,9 +59,6 @@ func (this *Client) handleInput() {
 		}
 
 		if header.Cmd == gnproto.CMD_HEART_BEAT {
-			//debug
-			fmt.Println("recv heart beat")
-
 			this.hbtime = time.Now()
 		} else {
 			req := NewRequest(this, &header)
@@ -90,6 +87,8 @@ func (this *Client) handleOutput() {
 				resp.Flush()
 
 			case <-this.exit:
+				//TODO
+				//trace
 				return
 		}
 	}
@@ -108,6 +107,8 @@ func NewClient() *Client {
 
 func (this *Client) Init(conn *net.TCPConn, server *Server) error {
 	if conn == nil || server == nil {
+		//TODO
+		//trace
 		return errors.New("nil parameter")
 	}
 
@@ -145,6 +146,8 @@ func (this *Client) ReadFrom(rd io.Reader) int {
 			nn += n
 		}
 		if err == io.EOF {
+			//TODO
+			//trace
 			break
 		}
 		if err != nil {

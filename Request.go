@@ -30,6 +30,8 @@ func (this *Request) Body() ([]byte, error) {
 	if this.header.Len > 0 {
 		bodybuf := make([]byte, this.header.Len)
 		if len(bodybuf) != gnutil.ReadFull(this.client.conn, bodybuf) {
+			//TODO
+			//trace
 			return bodybuf, errors.New("read request body error")
 		}
 		return bodybuf, nil

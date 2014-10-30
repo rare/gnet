@@ -37,6 +37,8 @@ func (this BlackWhiteListFilter) loadBlackWhiteList() error {
 			}
 		}
 		if err := scanner.Err(); err != nil {
+			//TODO
+			//trace
 			return errors.New("load black list error")
 		}
 	}
@@ -52,6 +54,8 @@ func (this BlackWhiteListFilter) loadBlackWhiteList() error {
 			}
 		}
 		if err := scanner.Err(); err != nil {
+			//TODO
+			//trace
 			return errors.New("load white list error")
 		}
 	}
