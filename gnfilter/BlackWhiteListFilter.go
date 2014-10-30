@@ -3,9 +3,9 @@ package gnfilter
 import (
 	"bufio"
 	"container/list"
-	"errors"
 	"os"
 	"strings"
+	log "github.com/cihub/seelog"
 )
 
 type BlackWhiteListFilter struct {
@@ -33,13 +33,13 @@ func (this BlackWhiteListFilter) loadBlackWhiteList() error {
 		for scanner.Scan() {
 			rule := strings.Trim(scanner.Text(), " \t")
 			if rule != "" {
+				log.Tracef("black list rule: %s", rule)
 				this.bl_rules.PushBack(rule)
 			}
 		}
 		if err := scanner.Err(); err != nil {
-			//TODO
-			//trace
-			return errors.New("load black list error")
+			log.Warnf("load black list error: (%v)", err)
+			return err
 		}
 	}
 
@@ -50,13 +50,13 @@ func (this BlackWhiteListFilter) loadBlackWhiteList() error {
 		for scanner.Scan() {
 			rule := strings.Trim(scanner.Text(), " \t")
 			if rule != "" {
+				log.Tracef("white list rule: %s", rule)
 				this.wl_rules.PushBack(rule)
 			}
 		}
 		if err := scanner.Err(); err != nil {
-			//TODO
-			//trace
-			return errors.New("load white list error")
+			log.Warnf("load white list error: (%v)", err)
+			return err
 		}
 	}
 

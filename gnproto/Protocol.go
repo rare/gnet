@@ -3,6 +3,7 @@ package gnproto
 import (
 	"bytes"
 	"encoding/binary"
+	log "github.com/cihub/seelog"
 )
 
 type Header struct {
@@ -23,8 +24,7 @@ const (
 func (this *Header) Serialize() ([]byte, error) {
 	buf	:= new(bytes.Buffer)
 	if err := binary.Write(buf, binary.BigEndian, *this); err != nil {
-		//TODO
-		//trace
+		log.Warnf("Serialize Proto Header Error: (%v)", err)
 		return nil, err
 	}
 	return buf.Bytes(), nil
@@ -33,8 +33,7 @@ func (this *Header) Serialize() ([]byte, error) {
 func (this *Header) Deserialize(b []byte) error {
 	buf := bytes.NewReader(b)
 	if err := binary.Read(buf, binary.BigEndian, this); err != nil {
-		//TODO
-		//trace
+		log.Warnf("Deserialize Proto Header Error: (%v)", err)
 		return err
 	}
 	return nil

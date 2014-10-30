@@ -4,6 +4,7 @@ import (
 	"errors"
 	"github.com/rare/gnet/gnproto"
 	"github.com/rare/gnet/gnutil"
+	log "github.com/cihub/seelog"
 )
 
 type Request struct {
@@ -30,8 +31,7 @@ func (this *Request) Body() ([]byte, error) {
 	if this.header.Len > 0 {
 		bodybuf := make([]byte, this.header.Len)
 		if len(bodybuf) != gnutil.ReadFull(this.client.conn, bodybuf) {
-			//TODO
-			//trace
+			log.Warnf("conn(%s) read request(cmd: %d) body error", this.client.conn.RemoteAddr(), this.header.Cmd)
 			return bodybuf, errors.New("read request body error")
 		}
 		return bodybuf, nil

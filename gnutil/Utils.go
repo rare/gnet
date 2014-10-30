@@ -4,18 +4,17 @@ import (
 	"io"
 	"net"
 	"os"
+	log "github.com/cihub/seelog"
 )
 
 func ReadFull(conn *net.TCPConn, buf []byte) int {
 	n, err := io.ReadFull(conn, buf)
 	if err != nil {
 		if e, ok := err.(*net.OpError); ok && e.Timeout() {
-			//TODO
-			//trace
+			log.Warnf("conn(%s) read timeout", conn.RemoteAddr())
 			return n
 		}
-		//TODO
-		//trace
+		log.Warnf("conn(%s) read error: (%v)", conn.RemoteAddr(), err)
 		return -1
 	}
 	return n

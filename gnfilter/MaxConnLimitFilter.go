@@ -1,5 +1,9 @@
 package gnfilter
 
+import (
+	log "github.com/cihub/seelog"
+)
+
 var (
 	DEFAULT_MAX_CONN	=	10000
 )
@@ -23,8 +27,7 @@ func (this MaxConnFilter) CareEvent(evt EventType) bool {
 func (this MaxConnFilter) DoFilter(evt EventType, obj interface{}) FilterResult {
 	if evt == EVT_CONN_ACCEPTED {
 		if this.limit != 0 && this.cn >= this.limit  {
-			//TODO
-			//trace
+			log.Warn("max conn limit reached")
 			return FR_ABORT
 		}
 		this.cn++

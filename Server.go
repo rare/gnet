@@ -1,8 +1,6 @@
 package gnet
 
 import (
-	"fmt"		//debug
-
 	"container/list"
 	"errors"
 	"net"
@@ -10,6 +8,7 @@ import (
 	"github.com/rare/gnet/gnproto"
 	"github.com/rare/gnet/gnfilter"
 	"github.com/rare/gnet/gnutil"
+	log "github.com/cihub/seelog"
 )
 
 type HandlerFuncType func(req *Request, resp *Response) error
@@ -18,7 +17,7 @@ type Server struct {
 	exit		chan bool
 	ln			*net.TCPListener
 	hm			map[uint16]HandlerFuncType		//request handler map
-	filters		*list.List							//filters 
+	filters		*list.List						//filters 
 	storage		*gnutil.Storage
 }
 
@@ -28,8 +27,7 @@ func (this *Server) addSysFilters() {
 	bwl_filter := gnfilter.NewBlackWhiteListFilter()
 	err := bwl_filter.Init(Conf.BlackListFile, Conf.WhiteListFile)
 	if err != nil {
-		//TODO
-		//trace
+		log.Warnf("init black white list filter error: (%v)", err)
 		return
 	}
 	this.FilterFunc(*bwl_filter)
@@ -46,14 +44,10 @@ func (this *Server) doFilters(evt gnfilter.EventType, obj interface{}) gnfilter.
 			fr := filter.DoFilter(gnfilter.EVT_CONN_ACCEPTED, obj)
 
 			if fr == gnfilter.FR_ABORT {
-				//TODO
-				//trace
 				return gnfilter.FR_ABORT
 			}
 
 			if fr == gnfilter.FR_END {
-				//TODO
-				//trace
 				break
 			}
 		}
@@ -63,28 +57,25 @@ func (this *Server) doFilters(evt gnfilter.EventType, obj interface{}) gnfilter.
 }
 
 func (this *Server) handleConnection(conn *net.TCPConn) {
-	//debug
-	fmt.Printf("accept connection from (%s) (%p)\n", conn.RemoteAddr(), conn)
+	log.Tracef("accept connection from (%s) (%p)", conn.RemoteAddr(), conn)
 
 	fr := this.doFilters(gnfilter.EVT_CONN_ACCEPTED, conn)
 	if fr != gnfilter.FR_OK {
-		//TODO
-		//trace
+		log.Warnf("conn(%s) aborted by filter", conn.RemoteAddr())
 		conn.Close()
 		return
 	}
 
 	defer func(){
-		//TODO
-		//trace
 		this.doFilters(gnfilter.EVT_CONN_CLOSING, conn)
 		conn.Close()
+		log.Tracef("conn(%s) closed", conn.RemoteAddr())
 	}()
 
 	cli := NewClient()
 	err := cli.Init(conn, this)
 	if err != nil {
-		//TODO
+		log.Warnf("conn(%s) init client error: (%v)", conn.RemoteAddr(), err)
 		return
 	}
 
@@ -103,8 +94,7 @@ func NewServer() *Server {
 
 func (this *Server) Init(conf *Config) error {
 	if conf == nil {
-		//TODO
-		//trace
+		log.Critical("init server error, nil conf")
 		return errors.New("nil parameter")
 	}
 
@@ -113,8 +103,7 @@ func (this *Server) Init(conf *Config) error {
 	tcpAddr, err := net.ResolveTCPAddr("tcp4", Conf.Addr)
 	ln, err := net.ListenTCP("tcp", tcpAddr)
 	if err != nil {
-		//logger.Fatalf("failed to listen, (%v)", err)
-		//TODO
+		log.Critical("failed to listen on %s, (%v)", Conf.Addr, err)
 		return err
 	}
 	this.ln = ln
@@ -130,8 +119,7 @@ func (this *Server) FilterFunc(filter gnfilter.Filter) {
 
 func (this *Server) HandleFunc(cmd uint16, handler HandlerFuncType) error {
 	if cmd == gnproto.CMD_HEART_BEAT || handler == nil {
-		//TODO
-		//trace
+		log.Warnf("set handler error, bad cmd(%d) or handler is nil", cmd)
 		return errors.New("cmd is 0(heartbeat cmd) or handler is nil")
 	}
 
@@ -143,15 +131,13 @@ func (this *Server) Dispatch(req *Request, resp *Response) error {
 	if handler, ok := this.hm[req.Cmd()]; ok {
 		return handler(req, resp)
 	}
-	//TODO
-	//trace
 	return errors.New("command handler not found")
 }
 
 func (this *Server) Run() {
 	defer func() {
-		//TODO
-		//trace
+		log.Tracef("server(%v) exiting", this.ln.Addr())
+
 		this.ln.Close()
 		this.ln = nil
 	}()
@@ -159,8 +145,7 @@ func (this *Server) Run() {
 	for {
 		select {
 		case <-this.exit:
-			//logger.Printf("ask me to quit")
-			//TODO
+			log.Tracef("someone ask me to quit")
 			return
 		default:
 		}
@@ -169,12 +154,10 @@ func (this *Server) Run() {
 		conn, err := this.ln.AcceptTCP()
 		if err != nil {
 			if e, ok := err.(*net.OpError); ok && e.Timeout() {
-				//TODO
-				//trace
+				log.Warnf("server(%v) accept timeout", this.ln.Addr())
 				continue
 			}
-			//logger.Printf("accept failed: %v\n", err)
-			//TODO
+			log.Warnf("server(%v) accept error: (%v)", this.ln.Addr(), err)
 			continue
 		}
 
